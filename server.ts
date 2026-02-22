@@ -30,19 +30,33 @@ const defaultData: AppData = {
 };
 
 function readData(): AppData {
+  console.log("Reading data from:", DATA_FILE);
   if (!fs.existsSync(DATA_FILE)) {
+    console.log("Data file not found, creating with defaults");
     fs.writeFileSync(DATA_FILE, JSON.stringify(defaultData, null, 2));
     return defaultData;
   }
   try {
     const content = fs.readFileSync(DATA_FILE, "utf-8");
-    return JSON.parse(content);
+    if (!content || content.trim() === "") {
+      console.log("Data file is empty, returning defaults");
+      return defaultData;
+    }
+    const data = JSON.parse(content);
+    if (!data.drivers || !Array.isArray(data.drivers)) {
+      console.log("Data format invalid (missing drivers), returning defaults");
+      return defaultData;
+    }
+    console.log(`Data loaded: ${data.drivers?.length || 0} drivers, ${data.vehicles?.length || 0} vehicles`);
+    return data;
   } catch (e) {
+    console.error("Error parsing data file, returning defaults:", e);
     return defaultData;
   }
 }
 
 function writeData(data: AppData) {
+  console.log("Writing data to:", DATA_FILE);
   fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
 }
 

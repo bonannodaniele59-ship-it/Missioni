@@ -19,17 +19,22 @@ const App: React.FC = () => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [pinInput, setPinInput] = useState('');
   const [pendingView, setPendingView] = useState<View | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
+      setIsLoading(true);
       try {
         const data = await apiService.getAllData();
-        setVehicles(data.vehicles);
-        setDrivers(data.drivers);
-        setMissions(data.missions);
-        setScriptUrl(data.scriptUrl);
+        setVehicles(data.vehicles || []);
+        setDrivers(data.drivers || []);
+        setMissions(data.missions || []);
+        setScriptUrl(data.scriptUrl || '');
+        console.log("Database sincronizzato. Utenti caricati:", (data.drivers || []).map((d: any) => d.name));
       } catch (error) {
         console.error("Error loading data:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
     fetchData();
@@ -81,6 +86,16 @@ const App: React.FC = () => {
   };
 
   const authenticate = () => {
+    if (isLoading) {
+      alert('Caricamento dati in corso... Attendi un secondo.');
+      return;
+    }
+    
+    if (drivers.length === 0) {
+      alert('Errore: Nessun utente trovato nel database. Contatta l\'assistenza.');
+      return;
+    }
+
     const admin = drivers.find(d => d.isAdmin && d.pin === pinInput);
     if (admin) {
       setIsAdminAuthenticated(true);
@@ -91,7 +106,7 @@ const App: React.FC = () => {
         setPendingView(null);
       }
     } else {
-      alert('PIN Amministratore Errato');
+      alert('PIN Amministratore Errato. Riprova.');
     }
   };
 
@@ -115,7 +130,15 @@ const App: React.FC = () => {
         </div>
       </header>
 
-      <main className="flex-grow max-w-7xl mx-auto w-full p-4 md:p-6 pb-24">
+      <main className="flex-grow max-w-7xl mx-auto w-full p-4 md:p-6 pb-24 relative">
+        {isLoading && (
+          <div className="absolute inset-0 bg-white bg-opacity-70 z-30 flex items-center justify-center">
+            <div className="flex flex-col items-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-800 mb-2"></div>
+              <p className="text-blue-800 font-bold">Sincronizzazione Database...</p>
+            </div>
+          </div>
+        )}
         {currentView === 'dashboard' && (
           <Dashboard 
             vehicles={vehicles} 
@@ -243,6 +266,7 @@ const App: React.FC = () => {
               onKeyPress={(e) => e.key === 'Enter' && authenticate()}
             />
             <button onClick={authenticate} className="w-full bg-blue-800 text-white font-bold py-3 rounded-lg uppercase">Sblocca Database</button>
+            <p className="mt-4 text-[10px] text-gray-400 italic">PIN predefinito: 1234 (Mario Rossi)</p>
           </div>
         </div>
       )}
