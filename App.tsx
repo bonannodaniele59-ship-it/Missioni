@@ -103,7 +103,7 @@ const App: React.FC = () => {
             <div className="bg-yellow-400 p-2 rounded-full">
               <i className="fas fa-shield-alt text-blue-900 text-xl"></i>
             </div>
-            <h1 className="font-bold text-lg">PC Vercelli Fleet Sync</h1>
+            <h1 className="font-bold text-lg">PC Leini Fleet Sync</h1>
           </div>
           <div className="flex items-center space-x-4">
             {isAdminAuthenticated ? (
@@ -186,7 +186,39 @@ const App: React.FC = () => {
                 <AdminVehicles vehicles={vehicles} onSave={handleSaveVehicles} />
               </>
             )}
-            {currentView === 'admin-drivers' && <AdminDrivers drivers={drivers} onSave={handleSaveDrivers} />}
+            {currentView === 'admin-drivers' && (
+              <div className="space-y-8">
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-purple-200">
+                  <h3 className="font-bold text-purple-900 mb-4 flex items-center">
+                    <i className="fas fa-key mr-2 text-purple-600"></i> Sicurezza Admin
+                  </h3>
+                  <p className="text-xs text-gray-500 mb-4">Modifica il PIN di accesso per gli amministratori. Assicurati di comunicarlo solo ai responsabili.</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {drivers.filter(d => d.isAdmin).map(admin => (
+                      <div key={admin.id} className="flex items-center justify-between p-3 bg-purple-50 rounded-xl border border-purple-100">
+                        <span className="font-bold text-purple-900">{admin.name}</span>
+                        <div className="flex items-center space-x-2">
+                          <input 
+                            type="password" 
+                            maxLength={4} 
+                            className="w-16 text-center border rounded p-1 font-mono"
+                            defaultValue={admin.pin}
+                            onBlur={async (e) => {
+                              if (e.target.value.length === 4) {
+                                const updated = drivers.map(d => d.id === admin.id ? { ...d, pin: e.target.value } : d);
+                                await handleSaveDrivers(updated);
+                              }
+                            }}
+                          />
+                          <span className="text-[10px] text-purple-400 uppercase font-bold">PIN (4 cifre)</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <AdminDrivers drivers={drivers} onSave={handleSaveDrivers} />
+              </div>
+            )}
           </div>
         )}
       </main>
