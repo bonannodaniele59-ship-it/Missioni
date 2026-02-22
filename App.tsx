@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { storage } from './services/mockData';
+import { apiService } from './services/apiService';
 import { syncMissionToGoogle } from './services/googleSync';
 import { View, Vehicle, Driver, Mission } from './types';
 import Dashboard from './components/Dashboard';
@@ -21,25 +21,54 @@ const App: React.FC = () => {
   const [pendingView, setPendingView] = useState<View | null>(null);
 
   useEffect(() => {
-    setVehicles(storage.getVehicles());
-    setDrivers(storage.getDrivers());
-    setMissions(storage.getMissions());
-    setScriptUrl(storage.getScriptUrl());
+    const fetchData = async () => {
+      try {
+        const data = await apiService.getAllData();
+        setVehicles(data.vehicles);
+        setDrivers(data.drivers);
+        setMissions(data.missions);
+        setScriptUrl(data.scriptUrl);
+      } catch (error) {
+        console.error("Error loading data:", error);
+      }
+    };
+    fetchData();
   }, []);
 
-  const handleSaveVehicles = (newVehicles: Vehicle[]) => {
+  const handleSaveVehicles = async (newVehicles: Vehicle[]) => {
     setVehicles(newVehicles);
-    storage.saveVehicles(newVehicles);
+    try {
+      await apiService.saveVehicles(newVehicles);
+    } catch (error) {
+      console.error("Error saving vehicles:", error);
+    }
   };
 
-  const handleSaveDrivers = (newDrivers: Driver[]) => {
+  const handleSaveDrivers = async (newDrivers: Driver[]) => {
     setDrivers(newDrivers);
-    storage.saveDrivers(newDrivers);
+    try {
+      await apiService.saveDrivers(newDrivers);
+    } catch (error) {
+      console.error("Error saving drivers:", error);
+    }
   };
 
-  const handleSaveMissions = (newMissions: Mission[]) => {
+  const handleSaveMissions = async (newMissions: Mission[]) => {
     setMissions(newMissions);
-    storage.saveMissions(newMissions);
+    try {
+      await apiService.saveMissions(newMissions);
+    } catch (error) {
+      console.error("Error saving missions:", error);
+    }
+  };
+
+  const handleSaveScriptUrl = async (url: string) => {
+    setScriptUrl(url);
+    try {
+      await apiService.saveScriptUrl(url);
+    } catch (error) {
+      console.error("Error saving script URL:", error);
+    }
   };
 
   const requestAdminAccess = (targetView: View) => {
@@ -144,10 +173,14 @@ const App: React.FC = () => {
                       value={scriptUrl}
                       onChange={(e) => {
                         setScriptUrl(e.target.value);
-                        storage.saveScriptUrl(e.target.value);
                       }}
                     />
-                    <button className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-bold">Salva URL</button>
+                    <button 
+                      onClick={() => handleSaveScriptUrl(scriptUrl)}
+                      className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-bold"
+                    >
+                      Salva URL
+                    </button>
                   </div>
                 </div>
                 <AdminVehicles vehicles={vehicles} onSave={handleSaveVehicles} />
